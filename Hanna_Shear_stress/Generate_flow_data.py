@@ -3,20 +3,23 @@ import numpy as np
 from included_functions import *
 import placentagen as pg
 import matplotlib
+
 matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
 from skan import draw, Skeleton, summarize
 from reprosim.diagnostics import set_diagnostics_level
 from reprosim.indices import perfusion_indices, get_ne_radius
-from reprosim.geometry import append_units,define_node_geometry, define_1d_element_placenta,define_rad_from_geom,add_matching_mesh, \
-        define_capillary_model,define_rad_from_file
-from reprosim.repro_exports import export_1d_elem_geometry, export_node_geometry, export_1d_elem_field,export_node_field,export_terminal_perfusion
+from reprosim.geometry import append_units, define_node_geometry, define_1d_element_placenta, define_rad_from_geom, \
+    add_matching_mesh, \
+    define_capillary_model, define_rad_from_file
+from reprosim.repro_exports import export_1d_elem_geometry, export_node_geometry, export_1d_elem_field, \
+    export_node_field, export_terminal_perfusion, export_1d_elem_field_grouped,export_1d_elem_geometry_grpd
 from reprosim.pressure_resistance_flow import evaluate_prq, calculate_stats
-import  csv
+import csv
 import os
 
-sample_number = 'PN783'
+sample_number = 'PN784'
 img_input_dir = 'Vessel traces/Image_input/'
 output_tree_dir = 'Vessel traces/outputs_grow_tree/' + sample_number + '/'
 output_flow_dir = 'Vessel traces/outputs_flow_tree/' + sample_number + '/'
@@ -26,11 +29,16 @@ if not os.path.exists(output_tree_dir):
 if not os.path.exists(output_flow_dir):
     os.makedirs(output_flow_dir)
 
+###############################################################
+# ---------------- Set DEBUG Variables ---------------------- #
+###############################################################
+
 use_custom_pixel_scale = True
 debug_export_all = True
 show_debug_images = False
 inlet_type = 'single'
 inlet_node = True
+
 ###############################################################
 # Parameters that define branching within the placenta volume #
 ###############################################################/
@@ -49,13 +57,12 @@ point_limit_ft = 1
 #pixel density
 pixel_scale = 0.0581  #mm/pixel
 #placenta measurements
-thickness = 20  #mm
+thickness = 16  #mm
 t_pixels = int(thickness / pixel_scale)
 t_half = int(t_pixels * 2)
 #SV and umbilical cord
 sv_length = 2.0
 umbilical_length = 20.0
-
 
 #######################################################################
 #------------------------Scale Generation-----------------------------#
@@ -67,8 +74,6 @@ if use_custom_pixel_scale:
     pixel_scale = get_scale(10, scale_file)
 print('Scale: ' + str(pixel_scale) + ' mm/pixel')
 
-
-
 #######################################################################
 #-------------------Ellipse/Hull Generation---------------------------#
 #######################################################################
@@ -79,7 +84,8 @@ placenta_mask = read_png(img_input_dir + placenta_filename, 'g')
 
 #Generate the outline of the placenta in 3D
 outputfilename = output_flow_dir + sample_number + '_plac_3d'
-plac_outline_nodes = generate_placenta_outline(placenta_mask, pixel_scale, thickness, outputfilename, show_debug_images, debug_export_all)
+plac_outline_nodes = generate_placenta_outline(placenta_mask, pixel_scale, thickness, outputfilename, show_debug_images,
+                                               debug_export_all)
 
 #Generate and export nodes that are equally spaces in the 3D spaced placental structure
 filename_hull = output_tree_dir + sample_number + '_nodes'
@@ -107,7 +113,8 @@ datapoints_ellipse, hull_params = generate_ellipse_hull(translated_points_3d)
 datapoints_ellipse_array = np.array(datapoints_ellipse)
 if debug_export_all:
     pg.export_ex_coords(translated_points_3d, 'placenta', output_tree_dir + 'villi_final_' + sample_number, 'exnode')
-    pg.export_ex_coords(datapoints_ellipse_array, 'placenta', output_tree_dir + 'villi_ellipse_' + sample_number, 'exnode')
+    pg.export_ex_coords(datapoints_ellipse_array, 'placenta', output_tree_dir + 'villi_ellipse_' + sample_number,
+                        'exnode')
     print('Debug node files ellipsified hull and translated ellipse exported to :', output_tree_dir)
 print('Hull Generation complete: ⸜(｡˃ ᵕ ˂ )⸝♡')
 
@@ -115,7 +122,7 @@ print('Hull Generation complete: ⸜(｡˃ ᵕ ˂ )⸝♡')
 #------------------- Artery tree Generation---------------------------#
 #######################################################################
 #arteries = read_png(img_input_dir + 'arteries_' + sample_number + '.png', 'r')
-arteries =  read_png(img_input_dir +  sample_number + '_vesseloutlines.png', 'r')
+arteries = read_png(img_input_dir + sample_number + '_vesseloutlines.png', 'r')
 
 #Skeletonize the artery branches
 skel_art = skeletonise_2d(arteries)
@@ -145,14 +152,12 @@ if debug_export_all:
     print('Arterial nodes and elems exported to: ', outputfilename)
 outputfilename = output_tree_dir + 'arteries_hull_scaled_' + sample_number
 arterial_shaped_nodes = map_nodes_to_hull(nodes_scaled, hull_params, thickness, outputfilename, debug_export_all)
-arterial_shaped_nodes,art_elems = pg.delete_unused_nodes(arterial_shaped_nodes,art_elems )
-
-
-print('Chorion mapping complete: ৻(  •̀ ᗜ •́  ৻)')
+arterial_shaped_nodes, art_elems = pg.delete_unused_nodes(arterial_shaped_nodes, art_elems)
 
 outputfilename = output_tree_dir + 'Umb_' + sample_number
 if inlet_node:
-    nodes_Umb, elems_Umb = create_umb_anastomosis(arterial_shaped_nodes, art_elems, umbilical_length, outputfilename, debug_export_all, inlet_type)
+    nodes_Umb, elems_Umb = create_umb_anastomosis(arterial_shaped_nodes, art_elems, umbilical_length, outputfilename,
+                                                  debug_export_all, inlet_type)
     print('Anastomosis and inlet added: ٩(^ᗜ^)و')
 
 else:
@@ -160,20 +165,26 @@ else:
     elems_Umb = art_elems
     print('Anastomosis and inlet not added: ٩(^ᗜ^)و')
 
+terminal = pg.calc_terminal_branch(nodes_Umb[:, 1:4], elems_Umb)
 
+branch_structure, branch_data = allocate_branch_numbers(nodes_Umb,elems_Umb)
+pg.export_exfield_1d_linear(branch_structure, 'arteries', 'branch', output_tree_dir + 'branch')
+chorion_nodes, chorion_elems = add_stem_villi(nodes_Umb, elems_Umb,sv_length ,terminal)
+pg.export_exelem_1d(chorion_elems, 'arteries', output_tree_dir + 'chorion' )
+pg.export_ex_coords(chorion_nodes, 'arteries', output_tree_dir + 'chorion', 'exnode')
+print('Chorion mapping complete: ৻(  •̀ ᗜ •́  ৻)')
 #######################################################################
 #----------------------- Tree Generation------------------------------#
 #######################################################################
 #Define new chorion and stem
 chorion_and_stem_shaped = dict.fromkeys(['nodes', 'elems', 'total_nodes', 'total_elems', 'elem_up', 'elem_down'])
-chorion_and_stem_shaped['nodes'] = nodes_Umb
-chorion_and_stem_shaped['elems'] = elems_Umb
-chorion_and_stem_shaped['total_nodes'] = len(nodes_Umb)
-chorion_and_stem_shaped['total_elems'] = len(elems_Umb)
-elem_cnct_shaped = pg.element_connectivity_1D(nodes_Umb[:, 1:4], elems_Umb)
+chorion_and_stem_shaped['nodes'] = chorion_nodes
+chorion_and_stem_shaped['elems'] = chorion_elems
+chorion_and_stem_shaped['total_nodes'] = len(chorion_nodes)
+chorion_and_stem_shaped['total_elems'] = len(chorion_elems)
+elem_cnct_shaped = pg.element_connectivity_1D(chorion_nodes[:, 1:4], chorion_elems)
 chorion_and_stem_shaped['elem_up'] = elem_cnct_shaped['elem_up']
 chorion_and_stem_shaped['elem_down'] = elem_cnct_shaped['elem_down']
-
 
 #------------------- Tree Generation---------------------------#
 #Grow tree with hull
@@ -187,14 +198,11 @@ radii_hull_elem = pg.define_radius_by_order(full_geom_shaped['nodes'][:, 1:4], f
                                             0, 0.1, 1.53)
 outputfilename = output_tree_dir + 'radii_' + sample_number
 pg.export_exfield_1d_linear(radii_hull_elem, 'placenta', 'radii', outputfilename)
-
-
 #ConvertExtoIP(Tree_file)
-pg.export_ip_coords(full_geom_shaped['nodes'][:,1:4],'placenta', Tree_file)
-pg.export_ipelem_1d(full_geom_shaped['elems'],'placenta',Tree_file)
+pg.export_ip_coords(full_geom_shaped['nodes'][:, 1:4], 'placenta', Tree_file)
+pg.export_ipelem_1d(full_geom_shaped['elems'], 'placenta', Tree_file)
 #pg.export_ipelem_1d(radii_hull_elem,'placenta',Tree_file)
 print('Tree generation complete: ৻(  •̀ ᗜ •́  ৻)')
-
 
 ####################################################################################
 #----------------------------------------------------------------------------------#
@@ -208,7 +216,8 @@ print('Beginning flow and pressure simulations (ó﹏ò｡)')
 # --------------- Flow simulation setup --------------------- #
 ###############################################################
 
-set_diagnostics_level(0)  # level 0 - no diagnostics; level 1 - only prints subroutine names (default); level 2 - prints subroutine names and contents of variables
+set_diagnostics_level(
+    0)  # level 0 - no diagnostics; level 1 - only prints subroutine names (default); level 2 - prints subroutine names and contents of variables
 perfusion_indices()
 #Load node points in tree
 print("Reading elem file", Tree_file)
@@ -230,7 +239,6 @@ rheology_type = 'constant_visc'
 #Vessel type can be rigid or a elastic as a function of diameter
 vessel_type = 'rigid'
 
-
 # define terminal units (this subroutine always needs to be called regardless of mesh_type
 append_units()
 
@@ -240,7 +248,7 @@ append_units()
 
 #venous mesh creation
 umbilical_elements = []
-add_matching_mesh(umbilical_elem_option,umbilical_elements)
+add_matching_mesh(umbilical_elem_option, umbilical_elements)
 
 # define radius by Strahler order in diverging (arterial mesh)
 s_ratio = 1.38  # rate of decrease in radius at each order of the arterial tree  1.38
@@ -262,7 +270,6 @@ print('Venous mesh created using parameter and order system:', umbilical_elem_op
 print('Viscosity:', rheology_type)
 print('Vessel type:', vessel_type)
 
-
 ###############################################################
 # ---------------- Capillary Creation ----------------------- #
 ###############################################################
@@ -271,7 +278,6 @@ num_convolutes = 10  # number of terminal convolute connections
 num_generations = 3  # number of generations of symmetric intermediate villous trees
 num_parallel = 6  # number of capillaries per convolute
 define_capillary_model(num_convolutes, num_generations, num_parallel, 'byrne_simplified')
-
 
 #Defining boundary conditions. Value at zero is a dummy variable
 if bc_type == 'pressure':
@@ -295,22 +301,28 @@ print('Pressure and flow simulation complete: ৻(  •̀ ᗜ •́  ৻)')
 ##export geometry
 group_name = 'perf_model'
 #Full_flow_tree files include venous mesh that matches arterial mesh
-export_1d_elem_geometry(output_flow_dir  + 'full_flow_tree_'+ sample_number+ '.exelem', group_name)
-export_node_geometry(output_flow_dir  + 'full_flow_tree_'+ sample_number+ '.exnode', group_name)
+export_1d_elem_geometry(output_flow_dir + 'full_flow_tree_' + sample_number + '.exelem', group_name)
+export_node_geometry(output_flow_dir + 'full_flow_tree_' + sample_number + '.exnode', group_name)
 
 # # export element field for radius
 field_name = 'radius_perf'
 ne_radius = get_ne_radius()
-export_1d_elem_field(ne_radius, output_flow_dir +  'radius_perf_'+ sample_number + '.exelem', group_name, field_name)
+export_1d_elem_field(ne_radius, output_flow_dir + 'radius_perf_' + sample_number + '.exelem', group_name, field_name)
 # export flow in each element
 field_name = 'flow'
-export_1d_elem_field(7,output_flow_dir + 'flow_perf_'+ sample_number + '.exelem', group_name, field_name)
+export_1d_elem_field(7, output_flow_dir + 'flow_perf_' + sample_number + '.exelem', group_name, field_name)
 #export node field for pressure
 field_name = 'pressure_perf'
-export_node_field(1, output_flow_dir + 'pressue_perf_'+ sample_number + '.exnode', group_name, field_name)
+export_node_field(1, output_flow_dir + 'pressue_perf_' + sample_number + '.exnode', group_name, field_name)
 # Export terminal solution
-export_terminal_perfusion(output_flow_dir + 'terminal_'+ sample_number + '.exnode', 'terminal_soln')
+export_terminal_perfusion(output_flow_dir + 'terminal_' + sample_number + '.exnode', 'terminal_soln')
+export_1d_elem_geometry_grpd(output_flow_dir + 'art_tree_' + sample_number + '.exelem', 'Arteries', 'art')
+export_1d_elem_field_grouped(ne_radius, output_flow_dir + 'radius_art_perf_' + sample_number + '.exelem', 'Arteries', 'radius', 'art')
+export_1d_elem_field_grouped(7, output_flow_dir + 'flow_art_perf_' + sample_number + '.exelem', 'Arteries', 'flow','art')
 
+export_1d_elem_geometry_grpd(output_flow_dir + 'vein_tree_' + sample_number + '.exelem', 'vein', 'vein')
+export_1d_elem_field_grouped(ne_radius, output_flow_dir + 'radius_vein_perf_' + sample_number + '.exelem', 'vein', 'radius', 'vein')
+export_1d_elem_field_grouped(7, output_flow_dir + 'flow_vein_perf_' + sample_number + '.exelem', 'vein', 'flow','vein')
 print('Pressure and flow files exported ৻(  •̀ ᗜ •́  ৻)')
 
 ####################################################################################
@@ -329,7 +341,7 @@ ROI = 'order'
 #order type (only if order is of importance
 order_category = 'strahler'
 #Orders of interest
-order_interest = [7, 8, 9]
+order_interest = [ 9]
 #Needs to have .csv at the end
 output_filename = sample_number + '_' + order_category + '.csv'
 ###############################################################
@@ -337,9 +349,9 @@ output_filename = sample_number + '_' + order_category + '.csv'
 ###############################################################
 
 #nodes_file = pg.import_exnode_tree(output_tree_dir + 'full_tree' + '.exnode')
-print('Reading Element file' )
+print('Reading Element file')
 elems_file = pg.import_exelem_tree(output_flow_dir + 'full_flow_tree_' + sample_number + '.exelem')
-print('Reading Node file' )
+print('Reading Node file')
 
 #nodes_chorion_file = pg.import_exnode_tree(output_tree_dir + 'Umb_' + '.exnode')
 #elems_chorion_file = pg.import_exelem_tree(output_tree_dir + 'final_chorion_geom' + '.exelem')
@@ -374,7 +386,7 @@ if ROI == 'stem_villi':
     for element in elem_downstream_end:
         new_value = np.asarray(
             [elems_chorion[element, 0], radii[element], flow[element], pressure[elems_chorion[element, 1]][1],
-             pressure[elems_chorion[element, 2]][1],0])
+             pressure[elems_chorion[element, 2]][1], 0])
         elements.append(new_value)
 elif ROI == 'order':
     print('Region of Interest: Order system')
@@ -390,9 +402,12 @@ elif ROI == 'order':
         exit()
     print('Order system: ', order_category)
     interest_elements = []
+    max_order = np.max(order)
+    order_interest = [max_order-1, max_order]
     for elem_i in range(0, len(order)):
         if order[elem_i] in order_interest:
-            new_value = np.asarray([int(elems[elem_i,0]), radii[elem_i], flow[elem_i], pressure[elems[elem_i, 1]][1], pressure[elems[elem_i, 2]][1],order[elem_i]])
+            new_value = np.asarray([int(elems[elem_i, 0]), radii[elem_i], flow[elem_i], pressure[elems[elem_i, 1]][1],
+                                    pressure[elems[elem_i, 2]][1], order[elem_i]])
             elements.append(new_value)
 
 element_array = np.array(elements)
@@ -432,7 +447,7 @@ try:
     with open(output_flow_dir + output_filename, mode='x', newline='') as file:
         writer = csv.writer(file)
         # Write headers
-        writer.writerow(['Element Number', 'Radius', 'Flow Rate', 'Inlet Pressure', 'Outlet Pressure','order'])
+        writer.writerow(['Element Number', 'Radius', 'Flow Rate', 'Inlet Pressure', 'Outlet Pressure', 'order'])
         # Write data
         writer.writerows(element_array)
 
@@ -452,5 +467,3 @@ except FileExistsError:
         writer.writerow(upper_row)
         writer.writerow(lower_row)
     print("File already exists. Appending data without headers.")
-
-
