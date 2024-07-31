@@ -485,20 +485,148 @@ def skel2graph(sk, outputfilename, debug_file):
 
     return pixel_graph, coordinates, nodes[:, :][0:node_kount + 1], elems[:, :][0:elem_kount + 1]
 
+def find_branch_points(nodes, elems):
+    elem_cnct = pg.element_connectivity_1D(nodes[:,1:4],elems)
+    elem_up = elem_cnct['elem_up']
+    elem_down = elem_cnct['elem_down']
+    biifurcation_elems = []
+    root_node, root_elem = find_root_nodes(nodes,elems)
+    bifurcation_nodes = []
+    branch_parents = [root_elem[0]]
+    terminals = pg.calc_terminal_branch(nodes[:,1:4], elems)
+
+    for el in range(0,len(elem_down)):
+        if elem_down[el][0] == 2:
+            biifurcation_elems.append(elems[el,:])
+            bif_node = nodes[elems[el][2],:]
+            bifurcation_nodes.append(bif_node)
+            branch_parents.append(elem_down[el][1])
+            branch_parents.append(elem_down[el][2])
+    biifurcation_elems = np.asarray(biifurcation_elems)
+    branch_end = np.hstack((biifurcation_elems[:,0],terminals['terminal_elems']))
+    return np.asarray(biifurcation_elems), np.asarray(bifurcation_nodes),np.asarray(branch_parents), np.sort(branch_end)
+
+def allocate_branch_numbers(nodes, elems):
+    bif_elems, bif_nodes, branch_parents, branch_end = find_branch_points(nodes,elems)
+    elem_cnct = pg.element_connectivity_1D(nodes[:,1:4],elems)
+    elem_down = elem_cnct['elem_down']
+    branch_data = []
+    branch = 1
+    elem_count = 0
+    branch_start = branch_parents[branch - 1]
+    branch_structure = np.zeros(len(elems))
+    while branch <= len(branch_parents):
+        if elem_down[elem_count,0] == 1: #element is continuation
+            branch_structure[elem_count] = branch
+            elem_count = elem_down[elem_count,1]
+        elif elem_down[elem_count,0] == 2 or elem_down[elem_count,0] == 0: #Bifurcation or terminal
+            branch_structure[elem_count] = branch
+            branch_info = np.asarray([branch, branch_start, elem_count])
+            branch_data.append(branch_info)
+            if branch == len(branch_parents): #This will be the last point
+                break
+            branch += 1
+            branch_start = branch_parents[branch - 1]
+            elem_count = branch_start
+
+    return branch_structure, np.asarray(branch_data)
+
+
+def find_middle_index(branch_structure, branch_number):
+    # Step 1: Extract indices corresponding to the branch number
+    indices = np.where(branch_structure == branch_number)[0]
+
+    # Step 2: Check if indices are found
+    if len(indices) == 0:
+        return None  # Or raise an exception, or return a default value
+
+    # Step 3: Sort indices
+    sorted_indices = np.sort(indices)
+
+    # Step 4: Find the middle index
+    middle_index = sorted_indices[len(sorted_indices) // 2]
+
+    return middle_index
+def allocate_stem_locations(branch_data, branch_structure ,terminals):
+    stem_location_elems = []
+    terminal_elem = terminals['terminal_elems']
+
+    for i in range(0, len(branch_data)):
+        elem_start = branch_data[i,1]
+        elem_end = branch_data[i,2]
+        if elem_start != elem_end:
+            if (elem_end not in terminal_elem):
+                stem_end_elem = elem_end - 1 #is not terminal so add stem villi before to avoid trifurcation
+            else:
+                stem_end_elem = elem_end #is terminal so add stem villi at end
+                stem_location_elems.append(stem_end_elem)
+            middle_elem = find_middle_index(branch_structure,branch_data[i,0])
+            stem_location_elems.append(middle_elem)
+
+        else: #Very short branch
+            stem_location_elems.append(elem_end)
+    return np.asarray(stem_location_elems)
+def add_stem_villi(nodes_all, elems_all,sv_length,  terminals):
+    branch_structure, branch_data = allocate_branch_numbers(nodes_all,elems_all)
+    stem_location = allocate_stem_locations(branch_data,branch_structure, terminals)
+
+    print("Number of stem villi added:", len(stem_location))
+    node_len = len(nodes_all)
+    elem_len = len(elems_all)
+    new_node_len = node_len + len(stem_location)
+    new_elem_len = elem_len + len(stem_location)
+
+    #initialise new arrays
+    chorion_elems = np.zeros((new_elem_len, 3), dtype=int)
+    chorion_nodes = np.zeros((new_node_len, 4))
+    node_count = node_len
+    elem_count = elem_len
+    chorion_nodes[0:node_len,:] = nodes_all
+    chorion_elems[0:elem_len,:] = elems_all
+    bif_elems, bif_nodes, branch_parents, branch_end = find_branch_points(nodes_all, elems_all)
+    stem_location = np.unique(stem_location)
+    for branch_elem in stem_location:
+        connected_node_num = elems_all[branch_elem,2]
+        connected_node = nodes_all[connected_node_num,:]
+        if branch_elem not in bif_elems:
+            chorion_nodes[node_count][0] = node_count #Node Number
+            chorion_nodes[node_count][1] = connected_node[1]
+            chorion_nodes[node_count][2] = connected_node[2]
+            chorion_nodes[node_count][3] = connected_node[3] - sv_length
+            chorion_elems[elem_count][0] = elem_count
+            chorion_elems[elem_count][1] = connected_node_num
+            chorion_elems[elem_count][2] = node_count
+            elem_count += 1
+            node_count += 1
+    mask_nodes = np.any(chorion_nodes != 0, axis=1)
+    mask_elems = np.any(chorion_elems != 0, axis=1)
+    chorion_nodes = chorion_nodes[mask_nodes]
+    chorion_elems = chorion_elems[mask_elems]
+
+    return chorion_nodes, chorion_elems
 
 def map_nodes_to_hull(nodes, params, thickness, outputfilename, debug_file):
-    z_level = thickness / 2.0
+    z_level = (thickness / 2.0)
     slice_coordinates = params[:, 0]
     for i in range(0, len(nodes)):
         difference = np.abs(slice_coordinates - nodes[i, 2])
         closest_slice_index = np.argmin(difference)
         slice_params = params[closest_slice_index, :]
-        z_closest_ellipse = z_level * np.sqrt(1 - (((nodes[i, 1] - slice_params[4]) / slice_params[3]) ** 2))
+        scale = 1
+
+        z_closest_ellipse = z_level * np.sqrt(1 - (((nodes[i, 1] - slice_params[4]) / (slice_params[3]*scale)) ** 2))
+
+        while(np.isnan(z_closest_ellipse)):
+            scale += 0.01
+            z_closest_ellipse = z_level * np.sqrt(1 - (((nodes[i, 1] - slice_params[4]) / (slice_params[3] * scale)) ** 2))
+
         #radius_check = (((nodes[i, 0] - slice_params[4]) / slice_params[3]) ** 2) + ((nodes[i, 3] / z_level) ** 2)
         if z_closest_ellipse < nodes[i, 3]:
             nodes[i, 3] = z_closest_ellipse
         else:
             nodes[i, 3] = z_level
+
+
     if debug_file:
         pg.export_ex_coords(nodes, 'arteries', outputfilename, 'exnode')
         print('Arterial nodes mapped to shaped hull exported to: ', outputfilename)
