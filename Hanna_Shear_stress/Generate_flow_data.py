@@ -19,7 +19,7 @@ from reprosim.pressure_resistance_flow import evaluate_prq, calculate_stats
 import csv
 import os
 
-sample_number = 'P49'
+sample_number = 'TTTS'
 img_input_dir = 'Vessel traces/Image_input/'
 output_tree_dir = 'Vessel traces/outputs_grow_tree/' + sample_number + '/'
 output_flow_dir = 'Vessel traces/outputs_flow_tree/' + sample_number + '/'
@@ -34,7 +34,7 @@ if not os.path.exists(output_flow_dir):
 ###############################################################
 
 use_custom_pixel_scale = False
-debug_export_all = False
+debug_export_all = True
 show_debug_images = False
 inlet_type = 'double'
 inlet_node = True

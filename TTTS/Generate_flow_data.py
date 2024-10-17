@@ -238,8 +238,7 @@ N2,E2 = find_root_nodes(chorion_nodes,chorion_elems)
 orders = evaluate_orders(chorion_nodes[:,1:4],chorion_elems)
 orders_multi = evaluate_orders_multi(chorion_nodes,chorion_elems,anast_elem[0])
 radii = pg.define_radius_by_order(chorion_nodes[:,1:4], chorion_elems,'strahler',0,0.1,1.53)
-pg.export_exfield_1d_linear(radii, 'placenta', 'radii', output_tree_dir + "rad"
-                                                                          "iiiC")
+pg.export_exfield_1d_linear(radii, 'placenta', 'radii', output_tree_dir + "radiiiC")
 pg.export_exfield_1d_linear(orders['strahler'], 'placenta', 'order', output_tree_dir + "orderC")
 pg.export_exfield_1d_linear(orders['generation'], 'placenta', 'generation', output_tree_dir + "genC")
 
@@ -267,7 +266,7 @@ pg.export_ex_coords(full_geom_shaped['nodes'], 'placenta', Tree_file, 'exnode')
 pg.export_exelem_1d(full_geom_shaped['elems'], 'placenta', Tree_file)
 radii_hull_elem = define_radius_by_ordersj(full_geom_shaped['nodes'][:, 1:4], full_geom_shaped['elems'], 'strahler',
                                             0, 0.1, 1.53)
-
+#radii_hull_elem = evaluate_orders_multi(full_geom_shaped['nodes'][:, 1:4], full_geom_shaped['elems'],new_elem[0,0]+3)
 outputfilename = output_tree_dir + 'radii_' + sample_number
 pg.export_exfield_1d_linear(radii_hull_elem, 'placenta', 'radii', outputfilename)
 #ConvertExtoIP(Tree_file)

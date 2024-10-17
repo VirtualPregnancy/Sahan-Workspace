@@ -1207,11 +1207,11 @@ def element_rearrage(nodes, elems, anast_elem):
     elem_up_new = elem_connect['elem_up']
     index = np.where(elem_up_new[:, 0] == 2)[0][0]
     anast_elem = elems_new[index]
-    elem_mod = np.delete(elems_new,index, axis =0)
-    elem_mod = np.vstack([elem_mod, anast_elem])
-    elem_mod[:,0] = np.arange(0, len(elem_mod))
+    #elem_mod = np.delete(elems_new,index, axis =0)
+    #elem_mod = np.vstack([elem_mod, anast_elem])
+    #elem_mod[:,0] = np.arange(0, len(elem_mod))
 
-    return elems_new, elem_mod, anast_elem
+    return elems_new, 0, anast_elem
 
 def define_radius_by_ordersj(node_loc, elems, system, inlet_elem, inlet_radius, radius_ratio):
     """ This function defines radii in a branching tree by 'order' of the vessel
