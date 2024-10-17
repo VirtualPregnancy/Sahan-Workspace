@@ -376,8 +376,7 @@ def tellme_figtitle(s):
     plt.draw()
 def skel2graph(sk, outputfilename, debug_file):
 
-
-
+    '''
     plt.clf()
     plt.imshow(sk)
 
@@ -389,8 +388,8 @@ def skel2graph(sk, outputfilename, debug_file):
 
     pts = plt.ginput(n=1, show_clicks=True, mouse_add=1)
 
-
-    #pts = [[2349, 309], [2427.2, 3185.5]]
+    '''
+    pts = [[2349, 309], [2427.2, 3185.5]]
 
     # Im guessing these are coordinates of the umbilical artery insertion
     inlets = np.asarray(pts)
