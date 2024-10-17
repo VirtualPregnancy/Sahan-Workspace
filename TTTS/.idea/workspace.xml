@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f3ae118a-6c78-490d-8e32-c77f558e5761" name="Changes" comment="" />
+    <list default="true" id="f3ae118a-6c78-490d-8e32-c77f558e5761" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/outputs_grow_tree/TTTS/success.png" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -18,8 +22,25 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$/.." value="stem_villi" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Sahannny&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/VirtualPregnancy/Sahan-Workspace.git&quot;,
+    &quot;accountId&quot;: &quot;5b97d2e4-0441-493e-a4f6-2e8d5e615663&quot;
+  }
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
 }</component>
@@ -28,24 +49,24 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python tests.Doctests in analyse_tree.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.Analytical Solution.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Check shear stress.executor&quot;: &quot;Run&quot;,
-    &quot;Python.ConvertEXtoIP.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Generate_flow_data.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.Grow_tree_from_photo.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.ImageFile.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.Test_sparse.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.grow_tree.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.included_functions.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.pg_utilities.executor&quot;: &quot;Debug&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/cjay511/Code/repro-examplesSJ/geometry/model-from-photo/codes_for_placentagen.py&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python tests.Doctests in analyse_tree.executor": "Debug",
+    "Python.Analytical Solution.executor": "Run",
+    "Python.Check shear stress.executor": "Run",
+    "Python.ConvertEXtoIP.executor": "Run",
+    "Python.Generate_flow_data.executor": "Run",
+    "Python.Grow_tree_from_photo.executor": "Debug",
+    "Python.ImageFile.executor": "Debug",
+    "Python.Test_sparse.executor": "Debug",
+    "Python.grow_tree.executor": "Debug",
+    "Python.included_functions.executor": "Debug",
+    "Python.pg_utilities.executor": "Debug",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/home/cjay511/Code/repro-examplesSJ/geometry/model-from-photo/codes_for_placentagen.py"
   }
-}</component>
+}]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -108,12 +129,15 @@
       </map>
     </option>
   </component>
+  <component name="VcsManagerConfiguration">
+    <option name="LAST_COMMIT_MESSAGE" value="" />
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Generate_flow_data.py</url>
-          <line>284</line>
+          <line>283</line>
           <option name="timeStamp" value="42" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
