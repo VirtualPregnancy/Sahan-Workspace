@@ -14,12 +14,12 @@ from reprosim.geometry import append_units, define_node_geometry, define_1d_elem
     add_matching_mesh, \
     define_capillary_model, define_rad_from_file
 from reprosim.repro_exports import export_1d_elem_geometry, export_node_geometry, export_1d_elem_field, \
-    export_node_field, export_terminal_perfusion, export_1d_elem_field_grouped, export_1d_elem_geometry_grpd
+    export_node_field, export_terminal_perfusion
 from reprosim.pressure_resistance_flow import evaluate_prq, calculate_stats
 import csv
 import os
 
-sample_number = 'TTTS'
+sample_number = 'PN784'
 img_input_dir = 'Vessel traces/Image_input/'
 output_tree_dir = 'Vessel traces/outputs_grow_tree/' + sample_number + '/'
 output_flow_dir = 'Vessel traces/outputs_flow_tree/' + sample_number + '/'
@@ -33,10 +33,10 @@ if not os.path.exists(output_flow_dir):
 # ---------------- Set DEBUG Variables ---------------------- #
 ###############################################################
 
-use_custom_pixel_scale = False
+use_custom_pixel_scale = True
 debug_export_all = True
 show_debug_images = False
-inlet_type = 'double'
+inlet_type = 'single'
 inlet_node = True
 
 ###############################################################
@@ -152,7 +152,7 @@ if debug_export_all:
     print('Arterial nodes and elems exported to: ', outputfilename)
 outputfilename = output_tree_dir + 'arteries_hull_scaled_' + sample_number
 arterial_shaped_nodes = map_nodes_to_hull(nodes_scaled, hull_params, thickness, outputfilename, debug_export_all)
-#arterial_shaped_nodes, art_elems = pg.delete_unused_nodes(arterial_shaped_nodes, art_elems)
+arterial_shaped_nodes, art_elems = pg.delete_unused_nodes(arterial_shaped_nodes, art_elems)
 
 outputfilename = output_tree_dir + 'Umb_' + sample_number
 if inlet_node:
@@ -316,16 +316,6 @@ field_name = 'pressure_perf'
 export_node_field(1, output_flow_dir + 'pressue_perf_' + sample_number + '.exnode', group_name, field_name)
 # Export terminal solution
 export_terminal_perfusion(output_flow_dir + 'terminal_' + sample_number + '.exnode', 'terminal_soln')
-export_1d_elem_geometry_grpd(output_flow_dir + 'art_tree_' + sample_number + '.exelem', 'Arteries', 'art')
-export_1d_elem_field_grouped(ne_radius, output_flow_dir + 'radius_art_perf_' + sample_number + '.exelem', 'Arteries',
-                             'radius', 'art')
-export_1d_elem_field_grouped(7, output_flow_dir + 'flow_art_perf_' + sample_number + '.exelem', 'Arteries', 'flow',
-                             'art')
-
-export_1d_elem_geometry_grpd(output_flow_dir + 'vein_tree_' + sample_number + '.exelem', 'vein', 'vein')
-export_1d_elem_field_grouped(ne_radius, output_flow_dir + 'radius_vein_perf_' + sample_number + '.exelem', 'vein',
-                             'radius', 'vein')
-export_1d_elem_field_grouped(7, output_flow_dir + 'flow_vein_perf_' + sample_number + '.exelem', 'vein', 'flow', 'vein')
 print('Pressure and flow files exported ৻(  •̀ ᗜ •́  ৻)')
 
 ####################################################################################
