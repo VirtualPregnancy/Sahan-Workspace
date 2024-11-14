@@ -19,7 +19,7 @@ from reprosim.pressure_resistance_flow import evaluate_prq, calculate_stats
 import csv
 import os
 
-sample_number = 'PN784'
+sample_number = 'P51'
 img_input_dir = 'Vessel traces/Image_input/'
 output_tree_dir = 'Vessel traces/outputs_grow_tree/' + sample_number + '/'
 output_flow_dir = 'Vessel traces/outputs_flow_tree/' + sample_number + '/'
@@ -33,10 +33,10 @@ if not os.path.exists(output_flow_dir):
 # ---------------- Set DEBUG Variables ---------------------- #
 ###############################################################
 
-use_custom_pixel_scale = True
+use_custom_pixel_scale = False
 debug_export_all = True
 show_debug_images = False
-inlet_type = 'single'
+inlet_type = 'double'
 inlet_node = True
 
 ###############################################################
@@ -152,7 +152,7 @@ if debug_export_all:
     print('Arterial nodes and elems exported to: ', outputfilename)
 outputfilename = output_tree_dir + 'arteries_hull_scaled_' + sample_number
 arterial_shaped_nodes = map_nodes_to_hull(nodes_scaled, hull_params, thickness, outputfilename, debug_export_all)
-arterial_shaped_nodes, art_elems = pg.delete_unused_nodes(arterial_shaped_nodes, art_elems)
+#arterial_shaped_nodes, art_elems = pg.delete_unused_nodes(arterial_shaped_nodes, art_elems)
 
 outputfilename = output_tree_dir + 'Umb_' + sample_number
 if inlet_node:

@@ -683,7 +683,7 @@ def create_umb_anastomosis(nodes, elems, umb_length, output_name, debug_file, in
         anas2anas = anas2anas.reshape(1, 3)
         elems_new = np.vstack([anas2anas, root2anas_1, root2anas_2, elems])
         elems_new = elems_new.astype(int)
-    elif len(root_nodes) == 1 and inlet_type == 'single':
+    elif inlet_type == 'single':
         x_point = root_nodes[0, 1]
         y_point = root_nodes[0, 2]
         z_point = root_nodes[0, 3] + umb_length

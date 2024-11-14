@@ -10,7 +10,7 @@ from reprosim.repro_exports import export_1d_elem_geometry, export_node_geometry
 from reprosim.pressure_resistance_flow import evaluate_prq, calculate_stats
 import os
 
-sample_number = 'P49'
+sample_number = 'P51'
 input_dir =  sample_number + '/microCT/model/'
 output_dir = sample_number + '/outputs/'
 
@@ -30,8 +30,7 @@ print('Beginning flow and pressure simulations (ó﹏ò｡)')
 # --------------- Flow simulation setup --------------------- #
 ###############################################################
 
-set_diagnostics_level(
-    2)  # level 0 - no diagnostics; level 1 - only prints subroutine names (default); level 2 - prints subroutine names and contents of variables
+set_diagnostics_level(0)  # level 0 - no diagnostics; level 1 - only prints subroutine names (default); level 2 - prints subroutine names and contents of variables
 perfusion_indices()
 #Load node points in tree
 print("Reading elem file", Tree_file)
@@ -70,7 +69,9 @@ inlet_rad = 1.8  # inlet radius
 order_system = 'strahler'
 order_options = 'arterial'
 name = 'inlet'
-define_rad_from_geom(order_system, s_ratio, name, inlet_rad, order_options, '')
+Radius_file = Tree_file + '_radius.ipfiel'
+define_rad_from_file(Radius_file,order_system,s_ratio)
+#define_rad_from_geom(order_system, s_ratio, name, inlet_rad, order_options, '')
 # defines radius by Strahler order in converging (venous mesh)
 s_ratio_ven = 1.46  # rate of decrease in radius at each order of the venous tree 1.46
 inlet_rad_ven = 4.0  # inlet radius
@@ -121,16 +122,16 @@ export_node_geometry(output_dir + 'full_flow_tree_microCT_' + sample_number + '.
 # # export element field for radius
 field_name = 'radius_perf'
 ne_radius = get_ne_radius()
-export_1d_elem_field(ne_radius, output_dir + 'radius_perf_microCT_' + sample_number + '.exelem', group_name, field_name)
+export_1d_elem_field(ne_radius, output_dir + 'radius_microCT_' + sample_number + '.exelem', group_name, field_name)
 # export flow in each element
 field_name = 'flow'
-export_1d_elem_field(7, output_dir + 'flow_perf_microCT_' + sample_number + '.exelem', group_name, field_name)
+export_1d_elem_field(7, output_dir + 'flow_microCT_' + sample_number + '.exelem', group_name, field_name)
 # export resistance in each element
 field_name = 'resistance'
-export_1d_elem_field(8, output_dir + 'resistance_perf_microCT_' + sample_number + '.exelem', group_name, field_name)
+export_1d_elem_field(8, output_dir + 'resistance_microCT_' + sample_number + '.exelem', group_name, field_name)
 #export node field for pressure
 field_name = 'pressure_perf'
-export_node_field(1, output_dir + 'pressue_perf_microCT_' + sample_number + '.exnode', group_name, field_name)
+export_node_field(1, output_dir + 'pressure_microCT_' + sample_number + '.exnode', group_name, field_name)
 # Export terminal solution
-export_terminal_perfusion(output_dir + 'terminal_' + sample_number + '.exnode', 'terminal_soln')
+export_terminal_perfusion(output_dir + 'terminal_microCT' + sample_number + '.exnode', 'terminal_soln')
 print('Pressure and flow files exported ৻(  •̀ ᗜ •́  ৻)')
