@@ -1,7 +1,7 @@
 import placentagen as pg
 import pandas as pd
-
-
+import numpy as np
+from tempfile import TemporaryFile
 sample_number = 'P51'
 output_dir = sample_number + '/outputs/'
 
@@ -28,7 +28,22 @@ flow_microCT = pg.import_exelem_field(output_dir + 'flow_microCT_' + sample_numb
 
 resistance_images = pg.import_exelem_field(output_dir + 'resistance_images_' + sample_number + '.exelem')
 resistance_microCT = pg.import_exelem_field(output_dir + 'resistance_microCT_' + sample_number + '.exelem')
+outfile = TemporaryFile()
+np.save(output_dir + 'n_i', nodes_image)
+np.save(output_dir + 'n_mCT', nodes_microCT)
+np.save(output_dir + 'e_i', elems_images)
+np.save(output_dir + 'e_mCT', elems_microCT)
+np.save(output_dir + 'p_i', pressure_images)
+np.save(output_dir + 'p_mCT', pressure_microCT)
+np.save(output_dir + 'r_i', radii_images)
+np.save(output_dir + 'r_mCT', radii_microCT)
+np.save(output_dir + 'q_i', flow_images)
+np.save(output_dir + 'q_mCT', flow_microCT)
+np.save(output_dir + 'R_i',resistance_images)
+np.save(output_dir + 'R_mCT', resistance_microCT)
 
+print('done')
+'''
 node_id = nodes_image[:,0].astype(int)
 x_coord = nodes_image[:,1]
 y_coord = nodes_image[:,2]
@@ -46,8 +61,8 @@ node_images_df =  pd.DataFrame({
     'Y coord':y_coord,
     'Z coord':z_coord,
     'Pressure':pressure
-})
+})'''
 
 
 
-node_images_df.to_csv('nodedata_images.csv',index=False)
+#node_images_df.to_csv('nodedata_images.csv',index=False)

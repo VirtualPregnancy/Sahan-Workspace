@@ -74,7 +74,7 @@ define_rad_from_file(Radius_file,order_system,s_ratio)
 #define_rad_from_geom(order_system, s_ratio, name, inlet_rad, order_options, '')
 # defines radius by Strahler order in converging (venous mesh)
 s_ratio_ven = 1.46  # rate of decrease in radius at each order of the venous tree 1.46
-inlet_rad_ven = 4.0  # inlet radius
+inlet_rad_ven = 2.2  # inlet radius
 order_system = 'strahler'
 order_options = 'venous'
 first_ven_no = ''  # number of elements read in plus one
