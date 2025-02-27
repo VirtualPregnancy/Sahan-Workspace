@@ -14,6 +14,10 @@ elems_images_file =  pg.import_exelem_tree(output_dir + 'full_flow_tree_images_'
 elems_images = elems_images_file['elems']
 elems_microCT_file =  pg.import_exelem_tree(output_dir + 'full_flow_tree_microCT_' + sample_number + '.exelem')
 elems_microCT = elems_microCT_file['elems']
+art_elems_images_file = pg.import_exelem_tree(output_dir + 'art_tree_' + sample_number + '.exelem')
+art_elems_images = art_elems_images_file['elems']
+art_elems_mCT_file = pg.import_exelem_tree(output_dir + 'art_tree_mCT_' + sample_number + '.exelem')
+art_elems_mCT = art_elems_images_file['elems']
 
 pressure_images_file =  pg.import_exnode_tree(output_dir + 'pressure_images_' + sample_number + '.exnode')
 pressure_images = pressure_images_file['nodes']
@@ -22,9 +26,13 @@ pressure_microCT = pressure_microCT_file['nodes']
 
 radii_images = pg.import_exelem_field(output_dir + 'radius_images_' + sample_number + '.exelem')
 radii_microCT = pg.import_exelem_field(output_dir + 'radius_microCT_' + sample_number + '.exelem')
+radii_art_images = pg.import_exelem_field(output_dir + 'radius_art_perf_' + sample_number + '.exelem')
+radii_art_mCT = pg.import_exelem_field(output_dir + 'radius_art_mCT_' + sample_number + '.exelem')
 
 flow_images = pg.import_exelem_field(output_dir + 'flow_images_' + sample_number + '.exelem')
 flow_microCT = pg.import_exelem_field(output_dir + 'flow_microCT_' + sample_number + '.exelem')
+flow_art_images = pg.import_exelem_field(output_dir + 'flow_art_perf_' + sample_number + '.exelem')
+flow_art_mCT = pg.import_exelem_field(output_dir + 'flow_art_mCT_' + sample_number + '.exelem')
 
 resistance_images = pg.import_exelem_field(output_dir + 'resistance_images_' + sample_number + '.exelem')
 resistance_microCT = pg.import_exelem_field(output_dir + 'resistance_microCT_' + sample_number + '.exelem')
@@ -41,27 +49,16 @@ np.save(output_dir + 'q_i', flow_images)
 np.save(output_dir + 'q_mCT', flow_microCT)
 np.save(output_dir + 'R_i',resistance_images)
 np.save(output_dir + 'R_mCT', resistance_microCT)
+np.save(output_dir + 'r_i_a', radii_art_images)
+np.save(output_dir + 'e_i_a', art_elems_images)
+np.save(output_dir + 'q_i_a', flow_art_images)
+
+np.save(output_dir + 'r_mCT_a', radii_art_mCT)
+np.save(output_dir + 'e_mCT_a', art_elems_mCT)
+np.save(output_dir + 'q_mCT_a', flow_art_mCT)
 
 print('done')
-'''
-node_id = nodes_image[:,0].astype(int)
-x_coord = nodes_image[:,1]
-y_coord = nodes_image[:,2]
-z_coord = nodes_image[:,3]
-pressure = pressure_images[:,1]
 
-elem_id = elems_images[:,0].astype(int)
-n_1 = elems_images[:,1]
-n_2 = elems_images[:,2]
-
-
-node_images_df =  pd.DataFrame({
-    'Node_number':node_id,
-    'X coord':x_coord,
-    'Y coord':y_coord,
-    'Z coord':z_coord,
-    'Pressure':pressure
-})'''
 
 
 

@@ -6,7 +6,7 @@ from reprosim.geometry import append_units, define_node_geometry, define_1d_elem
     add_matching_mesh, \
     define_capillary_model, define_rad_from_file
 from reprosim.repro_exports import export_1d_elem_geometry, export_node_geometry, export_1d_elem_field, \
-    export_node_field, export_terminal_perfusion
+    export_node_field, export_terminal_perfusion, export_1d_elem_field_grouped, export_1d_elem_geometry_grpd
 from reprosim.pressure_resistance_flow import evaluate_prq, calculate_stats
 import os
 
@@ -135,3 +135,8 @@ export_node_field(1, output_dir + 'pressure_microCT_' + sample_number + '.exnode
 # Export terminal solution
 export_terminal_perfusion(output_dir + 'terminal_microCT' + sample_number + '.exnode', 'terminal_soln')
 print('Pressure and flow files exported ৻(  •̀ ᗜ •́  ৻)')
+export_1d_elem_geometry_grpd(output_dir + 'art_tree_mCT_' + sample_number + '.exelem', 'Arteries', 'art')
+export_1d_elem_field_grouped(ne_radius, output_dir + 'radius_art_mCT_' + sample_number + '.exelem', 'Arteries',
+                             'radius', 'art')
+export_1d_elem_field_grouped(7, output_dir + 'flow_art_mCT_' + sample_number + '.exelem', 'Arteries', 'flow',
+                             'art')

@@ -6,7 +6,7 @@ from reprosim.geometry import append_units, define_node_geometry, define_1d_elem
     add_matching_mesh, \
     define_capillary_model, define_rad_from_file
 from reprosim.repro_exports import export_1d_elem_geometry, export_node_geometry, export_1d_elem_field, \
-    export_node_field, export_terminal_perfusion
+    export_node_field, export_terminal_perfusion, export_1d_elem_field_grouped, export_1d_elem_geometry_grpd
 from reprosim.pressure_resistance_flow import evaluate_prq, calculate_stats
 import os
 
@@ -31,7 +31,7 @@ print('Beginning flow and pressure simulations (ó﹏ò｡)')
 ###############################################################
 
 set_diagnostics_level(
-    2)  # level 0 - no diagnostics; level 1 - only prints subroutine names (default); level 2 - prints subroutine names and contents of variables
+    1)  # level 0 - no diagnostics; level 1 - only prints subroutine names (default); level 2 - prints subroutine names and contents of variables
 perfusion_indices()
 #Load node points in tree
 print("Reading elem file", Tree_file)
@@ -66,14 +66,14 @@ add_matching_mesh(umbilical_elem_option, umbilical_elements)
 
 # define radius by Strahler order in diverging (arterial mesh)
 s_ratio = 1.38  # rate of decrease in radius at each order of the arterial tree  1.38
-inlet_rad = 1.8  # inlet radius
+inlet_rad = 1.8 # inlet radius
 order_system = 'strahler'
 order_options = 'arterial'
 name = 'inlet'
 define_rad_from_geom(order_system, s_ratio, name, inlet_rad, order_options, '')
 # defines radius by Strahler order in converging (venous mesh)
 s_ratio_ven = 1.46  # rate of decrease in radius at each order of the venous tree 1.46
-inlet_rad_ven = 4.0  # inlet radius
+inlet_rad_ven = 4 # inlet radius
 order_system = 'strahler'
 order_options = 'venous'
 first_ven_no = ''  # number of elements read in plus one
@@ -134,3 +134,8 @@ export_node_field(1, output_dir + 'pressue_images_' + sample_number + '.exnode',
 # Export terminal solution
 export_terminal_perfusion(output_dir + 'terminal_images' + sample_number + '.exnode', 'terminal_soln')
 print('Pressure and flow files exported ৻(  •̀ ᗜ •́  ৻)')
+export_1d_elem_geometry_grpd(output_dir + 'art_tree_' + sample_number + '.exelem', 'Arteries', 'art')
+export_1d_elem_field_grouped(ne_radius, output_dir + 'radius_art_perf_' + sample_number + '.exelem', 'Arteries',
+                             'radius', 'art')
+export_1d_elem_field_grouped(7, output_dir + 'flow_art_perf_' + sample_number + '.exelem', 'Arteries', 'flow',
+                             'art')
