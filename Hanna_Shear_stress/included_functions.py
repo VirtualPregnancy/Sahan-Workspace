@@ -8,6 +8,11 @@ from skimage.morphology import skeletonize  #Compute the skeleton of a binary im
 from skan import csr
 from skan import Skeleton, summarize
 from skan import draw
+import cv2
+import os
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+
+
 
 def read_png(filename, extract_colour):
     #This function reads in a png file and extract the relevant colour from the image
@@ -25,8 +30,21 @@ def read_png(filename, extract_colour):
     return img2
 
 
-def generate_placenta_outline(image, pixel_spacing, thickness, outputfilename, debug_img, debug_file):
-    edges = filters.sobel(image)
+def generate_placenta_outline(image, pixel_spacing, thickness, outputfilename, debug_img, debug_file, is_rotate, rotation_angle):
+    if is_rotate:
+        (h, w) = image.shape[:2]
+        center = (w // 2, h // 2)
+
+        # Define rotation matrix (120 degrees clockwise)
+        angle = rotation_angle  # Clockwise rotation
+        rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+
+        # Rotate the image
+        rotated_image = cv2.warpAffine(image, rotation_matrix, (w, h))
+
+        edges = filters.sobel(rotated_image)
+    else:
+        edges = filters.sobel(image)
     binary_edges = edges > filters.threshold_otsu(edges)
     contours = measure.find_contours(binary_edges, level=0.8)
 
@@ -34,12 +52,13 @@ def generate_placenta_outline(image, pixel_spacing, thickness, outputfilename, d
     largest_contour = max(contours, key=len)
 
     # Plot the contour on the original image
+
     fig, ax = plt.subplots()
     ax.imshow(image, cmap=plt.cm.gray)
     ax.plot(largest_contour[:, 1], largest_contour[:, 0], linewidth=2, color='red')
     ax.set_title('Detected Contour')
-    if debug_img:
-        plt.show()
+ #   if debug_img:
+        #plt.show()
 
     # Extract contour points
     contour_points_mm = [(x * pixel_spacing, y * pixel_spacing) for y, x in largest_contour]
@@ -137,7 +156,7 @@ def generate_ellipse_hull(datapoints):
     for i in range(0, len(maxmin_x)):
         rx = (maxmin_x[i, 2] - maxmin_x[i, 1]) / 2.0
         a = (maxmin_x[i, 2] + maxmin_x[i, 1]) / 2.0
-        maxmin_x[i, 3] = rx
+        maxmin_x[i, 3] = rx + 2
         maxmin_x[i, 4] = a
     datapoints_ellipse = []
     for point in datapoints:
@@ -374,9 +393,10 @@ def tellme_figtitle(s):
     print(s)
     plt.title(s, fontsize=16)
     plt.draw()
-def skel2graph(sk, outputfilename, debug_file):
+def skel2graph(sk, outputfilename, debug_file, inlet_type):
 
-    '''
+
+
     plt.clf()
     plt.imshow(sk)
 
@@ -385,11 +405,15 @@ def skel2graph(sk, outputfilename, debug_file):
     tellme_figtitle('Click on, or near to the inlets')
 
     plt.waitforbuttonpress()
-
-    pts = plt.ginput(n=1, show_clicks=True, mouse_add=1)
-
-    '''
-    pts = [[2349, 309], [2427.2, 3185.5]]
+    if inlet_type == 'double':
+        pts = plt.ginput(n=2, show_clicks=True, mouse_add=1)
+        plt.clf()
+    elif inlet_type == 'single':
+        pts = plt.ginput(n=1, show_clicks=True, mouse_add=1)
+    elif inlet_type == 'TTTS':
+        pts = plt.ginput(n=4, show_clicks=True, mouse_add=1)
+    else:
+        pts = plt.ginput(n=-1, show_clicks=True, mouse_add=1)
 
     # Im guessing these are coordinates of the umbilical artery insertion
     inlets = np.asarray(pts)
@@ -731,3 +755,14 @@ def get_scale(scalebar_size, image_array):
 
     return scale_mm_per_pixel
 
+def get_vessel_volume(nodes, radii, elems):
+
+
+    node_1_coords = np.array([nodes[node_id] for node_id in elems[:, 1]])
+    node_2_coords = np.array([nodes[node_id] for node_id in elems[:, 2]])
+    lengths = np.linalg.norm(node_2_coords[:,1:4] - node_1_coords[:,1:4],axis=1)
+
+    vessel_volumes = np.pi * radii**2 * lengths
+    volume = np.sum(vessel_volumes)
+
+    return volume, vessel_volumes, lengths

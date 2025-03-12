@@ -4,7 +4,7 @@ from included_functions import *
 import placentagen as pg
 import matplotlib
 
-matplotlib.use('Qt5Agg')
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
 from skan import draw, Skeleton, summarize
@@ -14,12 +14,12 @@ from reprosim.geometry import append_units, define_node_geometry, define_1d_elem
     add_matching_mesh, \
     define_capillary_model, define_rad_from_file
 from reprosim.repro_exports import export_1d_elem_geometry, export_node_geometry, export_1d_elem_field, \
-    export_node_field, export_terminal_perfusion
+    export_node_field, export_terminal_perfusion, export_1d_elem_field_grouped, export_1d_elem_geometry_grpd
 from reprosim.pressure_resistance_flow import evaluate_prq, calculate_stats
 import csv
 import os
 
-sample_number = 'P51'
+sample_number = 'PN_704'
 img_input_dir = 'Vessel traces/Image_input/'
 output_tree_dir = 'Vessel traces/outputs_grow_tree/' + sample_number + '/'
 output_flow_dir = 'Vessel traces/outputs_flow_tree/' + sample_number + '/'
@@ -36,9 +36,10 @@ if not os.path.exists(output_flow_dir):
 use_custom_pixel_scale = False
 debug_export_all = True
 show_debug_images = False
-inlet_type = 'double'
+inlet_type = 'single'
 inlet_node = True
-
+is_rotate = False
+is_rotated = False
 ###############################################################
 # Parameters that define branching within the placenta volume #
 ###############################################################/
@@ -55,15 +56,16 @@ min_length_ft = 1.0  #mm
 #minimum number of data points that can be in any group after a data splitting proceedure
 point_limit_ft = 1
 #pixel density
-pixel_scale = 0.0581  #mm/pixel
+pixel_scale = 0.0581 #mm/pixel
 #placenta measurements
-thickness = 20 #mm
+thickness = 15 #mm
 t_pixels = int(thickness / pixel_scale)
 t_half = int(t_pixels * 2)
 #SV and umbilical cord
 sv_length = 2.0  #mm
-umbilical_length = 20.0  #mm
-
+umbilical_length = 10.0  #mm
+rotation_angle = 120
+scale_factor = 1.2
 #######################################################################
 #------------------------Scale Generation-----------------------------#
 #######################################################################
@@ -85,7 +87,7 @@ placenta_mask = read_png(img_input_dir + placenta_filename, 'g')
 #Generate the outline of the placenta in 3D
 outputfilename = output_flow_dir + sample_number + '_plac_3d'
 plac_outline_nodes = generate_placenta_outline(placenta_mask, pixel_scale, thickness, outputfilename, show_debug_images,
-                                               debug_export_all)
+                                               debug_export_all, is_rotate, rotation_angle)
 
 #Generate and export nodes that are equally spaces in the 3D spaced placental structure
 filename_hull = output_tree_dir + sample_number + '_nodes'
@@ -111,6 +113,17 @@ desired_center = np.array([ellipse_fit[3] * pixel_scale, ellipse_fit[4] * pixel_
 translated_points_3d = datapoints - desired_center
 datapoints_ellipse, hull_params = generate_ellipse_hull(translated_points_3d)
 datapoints_ellipse_array = np.array(datapoints_ellipse)
+
+index = np.arange(datapoints_ellipse_array.shape[0]).reshape(-1, 1)  # 0-based indexing
+
+datapoints_ellipse_array = np.hstack((index, datapoints_ellipse_array))
+plac_nodes = dict.fromkeys(['nodes'])
+plac_nodes['nodes'] = datapoints_ellipse_array
+
+ellipse_hull, xcentre, ycentre, zcentre = pg.equispaced_data_in_hull(n_seed,plac_nodes)
+
+
+
 if debug_export_all:
     pg.export_ex_coords(translated_points_3d, 'placenta', output_tree_dir + 'villi_final_' + sample_number, 'exnode')
     pg.export_ex_coords(datapoints_ellipse_array, 'placenta', output_tree_dir + 'villi_ellipse_' + sample_number,
@@ -123,6 +136,17 @@ print('Hull Generation complete: ⸜(｡˃ ᵕ ˂ )⸝♡')
 #######################################################################
 #arteries = read_png(img_input_dir + 'arteries_' + sample_number + '.png', 'r')
 arteries = read_png(img_input_dir + sample_number + '_vesseloutlines.png', 'r')
+if is_rotate:
+    (h, w) = arteries.shape[:2]
+    center = (w // 2, h // 2)
+
+    # Define rotation matrix (120 degrees clockwise)
+
+    rotation_matrix = cv2.getRotationMatrix2D(center, rotation_angle, 1.0)
+
+    # Rotate the image
+    arteries = cv2.warpAffine(arteries, rotation_matrix, (w, h))
+
 
 #Skeletonize the artery branches
 skel_art = skeletonise_2d(arteries)
@@ -130,7 +154,7 @@ skel_art = skeletonise_2d(arteries)
 branch_data = summarize(Skeleton(skel_art, spacing=pixel_scale))
 
 outputfilename = output_tree_dir + 'arteries_' + sample_number
-px_g, coord, art_nodes, art_elems = skel2graph(skel_art, outputfilename, debug_export_all)
+px_g, coord, art_nodes, art_elems = skel2graph(skel_art, outputfilename, debug_export_all,inlet_type)
 if show_debug_images:
     #Analyze branch type of skeleton and plt
     #draw overlay on branch
@@ -140,6 +164,7 @@ if show_debug_images:
     fig, ax = plt.subplots()
     display = (arteries + placenta_mask + skel_art) / 3
     ax.imshow(display)
+    plt.show()
 print('Chorion arteries generation complete: ৻(  •̀ ᗜ •́  ৻)')
 
 nodes_scaled = art_nodes
@@ -189,9 +214,30 @@ chorion_and_stem_shaped['elem_down'] = elem_cnct_shaped['elem_down']
 #------------------- Tree Generation---------------------------#
 #Grow tree with hull
 full_geom_shaped = pg.grow_large_tree(angle_max_ft, angle_min_ft, fraction_ft, min_length_ft, point_limit_ft, volume,
-                                      thickness, 0, datapoints_ellipse_array, chorion_and_stem_shaped, 1)
+                                      thickness, 0, ellipse_hull, chorion_and_stem_shaped, 1)
 
 Tree_file = output_tree_dir + 'full_tree_' + sample_number
+
+if is_rotated:
+    full_nodes = full_geom_shaped['nodes']
+    node_positions = full_nodes[:,1:4]
+    inlet = node_positions[0,:]
+    translated_positions = node_positions - inlet
+    theta = (rotation_angle * np.pi )/ 180
+    scaling_matrix = np.array([
+        [scale_factor, 0, 0],
+        [0, scale_factor, 0],
+        [0, 0, 1]  # No scaling in z
+    ])
+    rotation_matrix = np.asarray([
+        [np.cos(theta),np.sin(theta),0],
+        [-np.sin(theta),np.cos(theta),0],
+        [0,0,1]
+    ])
+    transformation_matrix  = scaling_matrix@rotation_matrix
+    rotated_nodes = translated_positions@transformation_matrix.T
+    full_nodes[:,1:4] = rotated_nodes + inlet
+    full_geom_shaped['nodes'] = full_nodes
 pg.export_ex_coords(full_geom_shaped['nodes'], 'placenta', Tree_file, 'exnode')
 pg.export_exelem_1d(full_geom_shaped['elems'], 'placenta', Tree_file)
 radii_hull_elem = pg.define_radius_by_order(full_geom_shaped['nodes'][:, 1:4], full_geom_shaped['elems'], 'strahler',
@@ -201,8 +247,10 @@ pg.export_exfield_1d_linear(radii_hull_elem, 'placenta', 'radii', outputfilename
 #ConvertExtoIP(Tree_file)
 pg.export_ip_coords(full_geom_shaped['nodes'][:, 1:4], 'placenta', Tree_file)
 pg.export_ipelem_1d(full_geom_shaped['elems'], 'placenta', Tree_file)
-#pg.export_ipelem_1d(radii_hull_elem,'placenta',Tree_file)
 print('Tree generation complete: ৻(  •̀ ᗜ •́  ৻)')
+
+volume, vessel_volumes, lengths = get_vessel_volume(full_geom_shaped['nodes'],radii_hull_elem,full_geom_shaped['elems'])
+pg.calc_terminal_branch(full_geom_shaped['nodes'][:,1:4],full_geom_shaped['elems'])
 
 ####################################################################################
 #----------------------------------------------------------------------------------#
@@ -317,7 +365,11 @@ export_node_field(1, output_flow_dir + 'pressue_perf_' + sample_number + '.exnod
 # Export terminal solution
 export_terminal_perfusion(output_flow_dir + 'terminal_' + sample_number + '.exnode', 'terminal_soln')
 print('Pressure and flow files exported ৻(  •̀ ᗜ •́  ৻)')
-
+export_1d_elem_geometry_grpd(output_flow_dir + 'art_tree_' + sample_number + '.exelem', 'Arteries', 'art')
+export_1d_elem_field_grouped(ne_radius, output_flow_dir + 'radius_art_perf_' + sample_number + '.exelem', 'Arteries',
+                             'radius', 'art')
+export_1d_elem_field_grouped(7, output_flow_dir + 'flow_art_perf_' + sample_number + '.exelem', 'Arteries', 'flow',
+                             'art')
 ####################################################################################
 #----------------------------------------------------------------------------------#
 #------------------------------- Data extraction ----------------------------------#
@@ -343,7 +395,7 @@ output_filename = sample_number + '_' + order_category + '.csv'
 # ----------------------- File I/O -------------------------- #
 ###############################################################
 
-#nodes_file = pg.import_exnode_tree(output_tree_dir + 'full_tree' + '.exnode')
+nodes_file = pg.import_exnode_tree(output_flow_dir + 'full_flow_tree_' + sample_number + '.exnode')
 print('Reading Element file')
 elems_file = pg.import_exelem_tree(output_flow_dir + 'full_flow_tree_' + sample_number + '.exelem')
 print('Reading Node file')
@@ -360,6 +412,9 @@ elems_chorion = elems_Umb
 print('Reading Radius file')
 
 radii = pg.import_exelem_field(output_flow_dir + 'radius_perf_' + sample_number + '.exelem')
+
+volume, vessel_volumes, lengths = get_vessel_volume(nodes_file['nodes'],radii,elems_file['elems'])
+print('total vessel volume: ' + str(volume))
 print('Reading Flow file')
 
 flow = pg.import_exelem_field(output_flow_dir + 'flow_perf_' + sample_number + '.exelem')
