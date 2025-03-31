@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
-sample_number = 'JT23067'
+sample_number = 'JT23070'
 placenta_type = 'Normal'
 img_input_dir = placenta_type + '/'
 
@@ -20,7 +20,7 @@ if not os.path.exists(img_input_dir):
 ###############################################################
 
 use_custom_pixel_scale = True
-
+show_debug_image = True
 ###############################################################
 # Parameters
 ###############################################################/
@@ -41,7 +41,7 @@ else:
 print('Scale: ' + str(pixel_scale) + ' mm/pixel')
 
 #read placenta outline
-placenta_area_filename = sample_number + '_outline.png'
-green_pixels, placenta_area = calculate_area(img_input_dir+placenta_area_filename,pixel_scale)
+placenta_area_filename = sample_number + '_area.png'
+green_pixels, placenta_area = calculate_area(img_input_dir+placenta_area_filename,pixel_scale, show_debug_image)
 print(f"Number of Green Pixels: {green_pixels}")
 print(f"Area in mm²: {placenta_area:.2f}")

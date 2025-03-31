@@ -38,9 +38,18 @@ def get_scale(scalebar_size, image_array):
 
     # Extract the x-coordinates of the line
     x_coords = line_pixels[1]
-
+    y_coords = line_pixels[0]
     # Calculate the length of the line in pixels
-    length_in_pixels = np.max(x_coords) - np.min(x_coords) + 1
+    x_range = np.max(x_coords) - np.min(x_coords)
+    y_range = np.max(y_coords) - np.min(y_coords)
+
+    if x_range > y_range:  # Horizontal line
+        length_in_pixels = x_range + 1
+        print("Scale bar horizontal")
+    else:  # Vertical line
+        length_in_pixels = y_range + 1
+        print("Scale bar vertical")
+
     print('Length of bar in pixels: ', length_in_pixels)
 
 
@@ -51,7 +60,7 @@ def get_scale(scalebar_size, image_array):
     return scale_mm_per_pixel
 
 
-def calculate_area(image_path, scale):
+def calculate_area(image_path, scale, is_debug_image):
     # Load the image
     image = cv2.imread(image_path)
 
@@ -64,7 +73,19 @@ def calculate_area(image_path, scale):
 
     # Create a binary mask where green is detected
     mask = cv2.inRange(hsv, lower_green, upper_green)
+    if is_debug_image:
+        plt.figure(figsize=(10, 5))
+        plt.subplot(1, 2, 1)
+        plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        plt.title("Original Image")
+        plt.axis("off")
 
+        plt.subplot(1, 2, 2)
+        plt.imshow(mask, cmap="gray")
+        plt.title("Green Mask")
+        plt.axis("off")
+
+        plt.show()
     # Count the number of nonzero pixels (green area)
     green_pixels = np.count_nonzero(mask)
 
